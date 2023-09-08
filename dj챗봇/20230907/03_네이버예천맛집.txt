@@ -1,0 +1,68 @@
+import requests, json
+from flask import Flask,request,jsonify,abort
+import urllib.request #json api 가져오기
+import sys
+import csv
+application = Flask(__name__)
+
+@application.route("/mychatbot", methods=['POST'])
+def aaa():
+    print(request.get_json())
+    authKey = "SERacM5uQW6+vp5Yv6HZ"
+    headers = {
+        'Content-Type':'application/json;charset=UTF-8',
+        'Authorization':authKey
+    }
+    user_key = request.get_json()['user']
+    msg = request.get_json()
+    print(msg['textContent']['text'])
+    
+    if msg['textContent']['text'].split()[0] == '로또':
+        url = "https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo="
+        No = msg['textContent']['text'].split()[1]
+        url = url + No
+        response = urllib.request.urlopen(url)
+        response_message = response.read().decode('utf8')
+        jr = json.loads(response_message)
+        lottoData = f"""{jr['drwtNo1']} {jr['drwtNo2']} {jr['drwtNo3']} 
+        {jr['drwtNo4']} {jr['drwtNo5']} {jr['drwtNo6']} {jr['bnusNo']}"""
+        data = {
+            'event' : 'send',
+            'user' : user_key,
+            'textContent' : {'text' : lottoData}
+        }
+    elif msg['textContent']['text'] == '맛집':
+        f = open('mydata.csv', 'r') #파일을 읽어들임
+        rdr = csv.reader(f)
+        isStart = True #첫번째 줄은 읽지 않는다.
+        mydatas = []
+        for line in rdr: #파일 읽어들이기
+            if isStart:
+                isStart=False
+            else:
+                mydatas.append(line)
+        f.close()
+        foodlist = ''
+        for item in mydatas:
+            foodlist += f'상호명:{item[1]}, 대표메뉴:{item[4]}\n'
+        data = {
+            'event' : 'send',
+            'user' : user_key,
+            'textContent' : {'text' :foodlist}
+        }
+    else:
+        data = {
+            'event' : 'send',
+            'user' : user_key,
+            'textContent' : {'text' : msg['textContent']['text']}
+        }    
+    message = json.dumps(data)
+    response = requests.post('https://gw.talk.naver.com/chatbot/v1/event',
+                            headers=headers,
+                            data=message)      
+    return 'a'
+
+
+
+if __name__ == "__main__":
+    application.run(host='0.0.0.0', port=5000)

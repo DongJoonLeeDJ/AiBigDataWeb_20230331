@@ -1,0 +1,48 @@
+import requests, json
+from flask import Flask,request,jsonify,abort
+import urllib.request #json api 가져오기
+import sys
+application = Flask(__name__)
+
+@application.route("/mychatbot", methods=['POST'])
+def aaa():
+    print(request.get_json())
+    authKey = "SERacM5uQW6+vp5Yv6HZ"
+    headers = {
+        'Content-Type':'application/json;charset=UTF-8',
+        'Authorization':authKey
+    }
+    user_key = request.get_json()['user']
+    msg = request.get_json()
+    print(msg['textContent']['text'])
+    
+    if msg['textContent']['text'].split()[0] == '로또':
+        url = "https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo="
+        No = msg['textContent']['text'].split()[1]
+        url = url + No
+        response = urllib.request.urlopen(url)
+        response_message = response.read().decode('utf8')
+        jr = json.loads(response_message)
+        lottoData = f"""{jr['drwtNo1']} {jr['drwtNo2']} {jr['drwtNo3']} 
+        {jr['drwtNo4']} {jr['drwtNo5']} {jr['drwtNo6']} {jr['bnusNo']}"""
+        data = {
+            'event' : 'send',
+            'user' : user_key,
+            'textContent' : {'text' : lottoData}
+        }  
+    else:
+        data = {
+            'event' : 'send',
+            'user' : user_key,
+            'textContent' : {'text' : msg['textContent']['text']}
+        }    
+    message = json.dumps(data)
+    response = requests.post('https://gw.talk.naver.com/chatbot/v1/event',
+                            headers=headers,
+                            data=message)      
+    return 'a'
+
+
+
+if __name__ == "__main__":
+    application.run(host='0.0.0.0', port=5000)

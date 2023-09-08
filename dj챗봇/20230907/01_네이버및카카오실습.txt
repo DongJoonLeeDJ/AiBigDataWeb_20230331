@@ -1,0 +1,65 @@
+import requests, json
+from flask import Flask,request,jsonify,abort
+import sys
+application = Flask(__name__)
+
+
+@application.route("/")
+def hello():
+    return "Hello goorm!"
+
+@application.route("/mychatbot", methods=['POST'])
+def aaa():
+    print(request.get_json())
+    authKey = "SERacM5uQW6+vp5Yv6HZ"
+    headers = {
+        'Content-Type':'application/json;charset=UTF-8',
+        'Authorization':authKey
+    }
+    user_key = request.get_json()['user']
+    data = {
+        'event' : 'send',
+        'user' : user_key,
+        'textContent' : {'text' : 'Hello'}
+    }
+    message = json.dumps(data)
+    response = requests.post('https://gw.talk.naver.com/chatbot/v1/event',
+                            headers=headers,
+                            data=message)     
+    data = {
+        'event' : 'send',
+        'user' : user_key,
+        'imageContent' : {'imageUrl' : 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/ZooZ%C3%BCrich_Canis_lupus_chanco_97.JPG/300px-ZooZ%C3%BCrich_Canis_lupus_chanco_97.JPG'}
+    }
+    message = json.dumps(data)
+    response = requests.post('https://gw.talk.naver.com/chatbot/v1/event',
+                            headers=headers,
+                            data=message)      
+    return 'a'
+
+@application.route("/mykakao", methods=['POST'])
+def kakaoTest():
+    print(request.get_json())
+    res = {
+        "version":"2.0",
+        "template": {
+            "outputs" : [
+                {
+                    'simpleText' : {
+                        'text' : 'Hello World'
+                    }
+                },
+                { #imageUrl이 https여야 하고, http면 안 되는 것 같음
+                    "simpleImage" : {
+                        "imageUrl" : 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/300px-Lion_waiting_in_Namibia.jpg',
+                        "altText" : "Hello"
+                    }
+                }
+            ]
+        }
+    }
+    return jsonify(res)
+
+
+if __name__ == "__main__":
+    application.run(host='0.0.0.0', port=5000)
